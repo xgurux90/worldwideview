@@ -31,7 +31,8 @@ export function DataConfigPanel() {
         if (selectedEntity) {
             setActiveTab("intel");
         }
-    }, [selectedEntity]);
+        // Keyed on id: the entity object is refreshed on every data update
+    }, [selectedEntity?.id]);
 
     return (
         <aside

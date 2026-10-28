@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, fetchAllRows } from "@/lib/supabase";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -42,10 +42,14 @@ export async function GET(request: Request) {
         const closestTimestamp = timeData[0].timestamp;
 
         // Fetch all generic records that match this exact timestamp
-        const { data: records, error: recordsError } = await supabase
-            .from("aviation_history")
-            .select("icao24, timestamp, latitude, longitude, altitude, heading, speed, callsign")
-            .eq("timestamp", closestTimestamp);
+        const { data: records, error: recordsError } = await fetchAllRows((from, to) =>
+            supabase
+                .from("aviation_history")
+                .select("icao24, timestamp, latitude, longitude, altitude, heading, speed, callsign")
+                .eq("timestamp", closestTimestamp)
+                .order("id", { ascending: true })
+                .range(from, to)
+        );
 
         if (recordsError) {
             console.error("[API/aviation/history] Supabase records error:", recordsError);

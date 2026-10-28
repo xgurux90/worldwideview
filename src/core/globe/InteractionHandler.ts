@@ -29,9 +29,6 @@ export function setupInteractionHandlers(
 ): () => void {
     const canvas = viewer.scene.canvas;
 
-    const setSelectedEntity = useStore.getState().setSelectedEntity;
-    const setHoveredEntity = useStore.getState().setHoveredEntity;
-
     const handler = new ScreenSpaceEventHandler(canvas);
 
     // Click → select entity
@@ -63,23 +60,13 @@ export function setupInteractionHandlers(
             // Wait for both throttle and camera/scene to be stable
             if (hoverTimeout !== null) return;
 
-            // Skip picking if camera is currently moving or scene is morphing
-            if (
-                viewer.scene.mode === SceneMode.MORPHING ||
-                (viewer.camera.pitch !== useStore.getState().cameraPitch && false /* basic heuristic or could use viewer.scene.preRender flag but we have store */)
-                // Actually the cleanest way to check if camera is moving is to use the viewer's internal properties, or checking if it's currently being dragged.
-            ) {
-                // Return early
-            }
-
             const pos = { x: event.endPosition.x, y: event.endPosition.y };
 
             hoverTimeout = setTimeout(() => {
                 hoverTimeout = null;
-                // Add an explicit check inside the timeout to ensure the scene is still in a stable picking state
+                // Picking is unreliable while the scene is morphing between modes
                 if (viewer.scene.mode === SceneMode.MORPHING) return;
 
-                // You can also check if a drag is happening if you have a drag state, but we'll stick to basic Cesium checks
                 const entity = findEntityAtPosition(viewer, pos);
                 const prevId = hoveredEntityIdRef.current;
                 const newId = entity ? entity.id : null;

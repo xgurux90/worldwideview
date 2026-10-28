@@ -9,6 +9,8 @@ import type {
     FilterDefinition,
 } from "@/core/plugins/PluginTypes";
 
+const KNOTS_TO_MS = 0.514444;
+
 const VESSEL_COLORS: Record<string, string> = {
     cargo: "#f59e0b",     // amber
     tanker: "#ef4444",    // red
@@ -55,7 +57,7 @@ function generateDemoVessels(): GeoEntity[] {
         latitude: v.lat + (Math.random() - 0.5) * 0.1,
         longitude: v.lon + (Math.random() - 0.5) * 0.1,
         heading: v.heading,
-        speed: v.speed,
+        speed: v.speed * KNOTS_TO_MS, // GeoEntity.speed is m/s
         timestamp: new Date(),
         label: v.name,
         properties: {

@@ -71,6 +71,13 @@ export function AppShell() {
         const unsubData = dataBus.on("dataUpdated", ({ pluginId, entities }) => {
             useStore.getState().setEntities(pluginId, entities);
             useStore.getState().setEntityCount(pluginId, entities.length);
+
+            // Keep the selected entity in sync with the latest data
+            const selected = useStore.getState().selectedEntity;
+            if (selected?.pluginId === pluginId) {
+                const fresh = entities.find((e) => e.id === selected.id);
+                if (fresh) useStore.setState({ selectedEntity: fresh });
+            }
         });
 
         return () => {

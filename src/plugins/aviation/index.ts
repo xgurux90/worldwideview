@@ -32,6 +32,10 @@ interface OpenSkyState {
     position_source: number;
 }
 
+// The server records history snapshots at most once every 5 minutes
+// (see recordToSupabase in lib/aviation-polling.ts)
+const HISTORY_SNAPSHOT_INTERVAL_MS = 5 * 60 * 1000;
+
 function altitudeToColor(altitude: number | null): string {
     if (altitude === null || altitude <= 0) return "#4ade80"; // green — ground
     if (altitude < 3000) return "#22d3ee"; // cyan — low
@@ -49,6 +53,7 @@ export class AviationPlugin implements WorldPlugin {
     version = "1.0.0";
 
     private context: PluginContext | null = null;
+    private lastHistory: { recordTime: number; entities: GeoEntity[] } | null = null;
 
     async initialize(ctx: PluginContext): Promise<void> {
         this.context = ctx;
@@ -65,21 +70,30 @@ export class AviationPlugin implements WorldPlugin {
             let data: any;
 
             if (state.isPlaybackMode) {
-                res = await fetch(`/api/aviation/history?time=${state.currentTime.getTime()}`);
+                const targetTime = state.currentTime.getTime();
+
+                // No newer snapshot can exist within one interval of the last one,
+                // so the server would return the same records again
+                const last = this.lastHistory;
+                if (last && targetTime >= last.recordTime && targetTime < last.recordTime + HISTORY_SNAPSHOT_INTERVAL_MS) {
+                    return last.entities;
+                }
+
+                res = await fetch(`/api/aviation/history?time=${targetTime}`);
                 if (!res.ok) throw new Error(`History API returned ${res.status}`);
                 const historyData = await res.json();
 
                 if (!historyData.records || !Array.isArray(historyData.records)) return [];
 
-                return historyData.records.map((s: any): GeoEntity => {
+                const historyEntities = historyData.records.map((s: any): GeoEntity => {
                     return {
                         id: `aviation-history-${s.icao24}`,
                         pluginId: "aviation",
                         latitude: s.latitude,
                         longitude: s.longitude,
                         altitude: (s.altitude || 0) * 10, // Scale for visibility matching Live mode
-                        heading: s.heading || undefined,
-                        speed: s.speed || undefined,
+                        heading: s.heading ?? undefined,
+                        speed: s.speed ?? undefined,
                         timestamp: new Date(s.timestamp), // from DB
                         label: s.callsign || s.icao24,
                         properties: {
@@ -92,6 +106,10 @@ export class AviationPlugin implements WorldPlugin {
                         },
                     };
                 });
+                if (typeof historyData.recordTime === "number") {
+                    this.lastHistory = { recordTime: historyData.recordTime, entities: historyEntities };
+                }
+                return historyEntities;
             } else {
                 res = await fetch("/api/aviation");
                 if (!res.ok) throw new Error(`Aviation API returned ${res.status}`);
@@ -138,8 +156,8 @@ export class AviationPlugin implements WorldPlugin {
                         latitude: state.latitude!,
                         longitude: state.longitude!,
                         altitude: (state.baro_altitude || 0) * 10, // Scale for visibility
-                        heading: state.true_track || undefined,
-                        speed: state.velocity || undefined,
+                        heading: state.true_track ?? undefined,
+                        speed: state.velocity ?? undefined,
                         timestamp: new Date(
                             (state.time_position || state.last_contact) * 1000
                         ),
@@ -160,7 +178,7 @@ export class AviationPlugin implements WorldPlugin {
             return entities;
         } catch (err) {
             console.error("[AviationPlugin] Fetch error:", err);
-            return [];
+            throw err; // Let PollingManager back off; keeps the last good data on screen
         }
     }
 

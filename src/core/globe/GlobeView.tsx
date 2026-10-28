@@ -13,6 +13,7 @@ import {
     Math as CesiumMath,
     HeadingPitchRange,
     Transforms,
+    CallbackProperty,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { useStore } from "@/core/state/store";
@@ -54,13 +55,6 @@ export default function GlobeView() {
     const lockedEntityId = useStore((s) => s.lockedEntityId);
     const setCameraPosition = useStore((s) => s.setCameraPosition);
     const setFps = useStore((s) => s.setFps);
-
-    // Camera position from store
-    const cameraLat = useStore((s) => s.cameraLat);
-    const cameraLon = useStore((s) => s.cameraLon);
-    const cameraAlt = useStore((s) => s.cameraAlt);
-    const cameraHeading = useStore((s) => s.cameraHeading);
-    const cameraPitch = useStore((s) => s.cameraPitch);
 
     // Compute visible & filtered entities
     const visibleEntities = useMemo(() => {
@@ -114,12 +108,18 @@ export default function GlobeView() {
         const selectionEntity = selectionEntityRef.current;
         if (!selectionEntity || !selectedEntity) return;
 
-        selectionEntity.position = Cartesian3.fromDegrees(
+        const fallback = Cartesian3.fromDegrees(
             selectedEntity.longitude,
             selectedEntity.latitude,
             selectedEntity.altitude || 0
+        );
+        // Follow the extrapolated primitive position so camera lock tracks movement
+        const id = selectedEntity.id;
+        selectionEntity.position = new CallbackProperty(
+            () => animatablesMapRef.current.get(id)?.posRef ?? fallback,
+            false
         ) as any;
-    }, [selectedEntity, entitiesByPlugin]);
+    }, [selectedEntity]);
 
     // Camera preset events
     useEffect(() => {
@@ -200,9 +200,9 @@ export default function GlobeView() {
 
         // Initialize Google Photorealistic 3D Tiles once
         try {
-            const tileset = await createGooglePhotorealistic3DTileset({
-                key: process.env.GOOGLE_MAPS_API_KEY || undefined,
-            });
+            // Loaded via Cesium Ion (NEXT_PUBLIC_CESIUM_TOKEN); the server-only
+            // GOOGLE_MAPS_API_KEY must never be exposed to the browser
+            const tileset = await createGooglePhotorealistic3DTileset();
             tileset.maximumScreenSpaceError = maxScreenSpaceError;
             viewer.scene.primitives.add(tileset);
             // useImageryManager will handle its visibility based on state

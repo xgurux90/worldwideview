@@ -17,6 +17,8 @@ interface AisState {
 const MAX_AGE_MS = 60 * 60 * 1000;   // 1 hour
 const TIMEOUT_MS = 60_000;           // 60s generous handshake window
 const RECONNECT_MS = 5_000;
+const VESSEL_TTL_MS = 60 * 60 * 1000; // drop vessels with no report for 1 hour
+const MAX_VESSELS = 50_000;
 
 function getState(): AisState {
     const g = globalThis as any;
@@ -33,7 +35,14 @@ function getState(): AisState {
 }
 
 export function getCachedVessels(): any[] {
-    return Array.from(getState().vesselCache.values());
+    const cache = getState().vesselCache;
+    // Map is kept in report order (oldest first), so stop at the first fresh entry
+    const cutoff = Date.now() - VESSEL_TTL_MS;
+    for (const [mmsi, vessel] of cache) {
+        if (vessel.receivedAt >= cutoff) break;
+        cache.delete(mmsi);
+    }
+    return Array.from(cache.values());
 }
 
 export function startAisStream(): void {
@@ -101,6 +110,8 @@ export function startAisStream(): void {
 
             if (Math.abs(rpt.Latitude) > 90 || Math.abs(rpt.Longitude) > 180) return;
 
+            // Re-insert so the Map stays ordered by most recent report
+            s.vesselCache.delete(mmsi);
             s.vesselCache.set(mmsi, {
                 mmsi,
                 name: meta.ShipName?.trim() || `MMSI ${mmsi}`,
@@ -110,9 +121,10 @@ export function startAisStream(): void {
                 speed: rpt.Sog === 1023 ? 0 : rpt.Sog,
                 heading: rpt.Cog === 3600 ? 0 : rpt.Cog,
                 timestamp: meta.time_utc,
+                receivedAt: Date.now(),
             });
 
-            if (s.vesselCache.size > 50_000) {
+            if (s.vesselCache.size > MAX_VESSELS) {
                 const k = s.vesselCache.keys().next().value;
                 if (k !== undefined) s.vesselCache.delete(k);
             }

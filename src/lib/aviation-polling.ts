@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import { fetchAllRows } from "./supabase";
 
 // Local file fallback for Next.js isolated process environments (like API routes vs instrumentation)
 const CACHE_FILE = path.join(process.cwd(), ".next", "aviation-cache.json");// Global state to survive HMR in Next.js development
@@ -256,7 +257,10 @@ export async function getLatestFromSupabase() {
         console.log(`[Aviation Polling] Found latest data from ${timestamp}. Fetching record batch...`);
 
         const { data: records, error: recError } = await withTimeout(
-            supabase.from("aviation_history").select("*").eq("timestamp", timestamp)
+            fetchAllRows((from, to) =>
+                supabase.from("aviation_history").select("*").eq("timestamp", timestamp).order("id", { ascending: true }).range(from, to)
+            ),
+            30000
         ) as { data: any, error: any };
 
         if (recError) {

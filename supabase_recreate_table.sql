@@ -17,9 +17,8 @@ CREATE TABLE public.aviation_history (
 -- 3. Immediately build the index we need on the empty table so queries are permanently fast.
 CREATE INDEX idx_aviation_history_timestamp ON public.aviation_history (timestamp DESC);
 
--- 4. Re-enable Row Level Security (RLS) if you previously had policies.
--- (By default, tables in Supabase should have RLS enabled if accessed from client, but since we insert from server and read from server/client, you might just need the policy or leave it disabled if you only access via Service Role)
+-- 4. Enable Row Level Security with no policies. The app only uses the service-role key
+--    (which bypasses RLS), so this blocks anon/public reads and writes through the REST API.
+ALTER TABLE public.aviation_history ENABLE ROW LEVEL SECURITY;
 
--- To allow anyone to read (if accessed directly from client):
--- ALTER TABLE public.aviation_history ENABLE ROW LEVEL SECURITY;
--- CREATE POLICY "Allow public read access" ON public.aviation_history FOR SELECT USING (true);
+-- 5. Retention: see supabase_hardening.sql to schedule deletion of old history.

@@ -13,6 +13,7 @@ import {
     Math as CesiumMath,
     HeadingPitchRange,
     Transforms,
+    CallbackProperty,
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
 import { useStore } from "@/core/state/store";
@@ -114,12 +115,18 @@ export default function GlobeView() {
         const selectionEntity = selectionEntityRef.current;
         if (!selectionEntity || !selectedEntity) return;
 
-        selectionEntity.position = Cartesian3.fromDegrees(
+        const fallback = Cartesian3.fromDegrees(
             selectedEntity.longitude,
             selectedEntity.latitude,
             selectedEntity.altitude || 0
+        );
+        // Follow the extrapolated primitive position so camera lock tracks movement
+        const id = selectedEntity.id;
+        selectionEntity.position = new CallbackProperty(
+            () => animatablesMapRef.current.get(id)?.posRef ?? fallback,
+            false
         ) as any;
-    }, [selectedEntity, entitiesByPlugin]);
+    }, [selectedEntity]);
 
     // Camera preset events
     useEffect(() => {

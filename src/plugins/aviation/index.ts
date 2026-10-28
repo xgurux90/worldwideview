@@ -78,8 +78,8 @@ export class AviationPlugin implements WorldPlugin {
                         latitude: s.latitude,
                         longitude: s.longitude,
                         altitude: (s.altitude || 0) * 10, // Scale for visibility matching Live mode
-                        heading: s.heading || undefined,
-                        speed: s.speed || undefined,
+                        heading: s.heading ?? undefined,
+                        speed: s.speed ?? undefined,
                         timestamp: new Date(s.timestamp), // from DB
                         label: s.callsign || s.icao24,
                         properties: {
@@ -138,8 +138,8 @@ export class AviationPlugin implements WorldPlugin {
                         latitude: state.latitude!,
                         longitude: state.longitude!,
                         altitude: (state.baro_altitude || 0) * 10, // Scale for visibility
-                        heading: state.true_track || undefined,
-                        speed: state.velocity || undefined,
+                        heading: state.true_track ?? undefined,
+                        speed: state.velocity ?? undefined,
                         timestamp: new Date(
                             (state.time_position || state.last_contact) * 1000
                         ),

@@ -21,6 +21,9 @@ interface FIRMSRecord {
     daynight: string;
 }
 
+// VIIRS reports confidence as single-letter codes
+const CONFIDENCE_LABELS: Record<string, string> = { l: "low", n: "nominal", h: "high" };
+
 function parseCSV(csv: string): FIRMSRecord[] {
     const lines = csv.trim().split("\n");
     if (lines.length < 2) return [];
@@ -50,7 +53,7 @@ function parseCSV(csv: string): FIRMSRecord[] {
             acq_date: (record["acq_date"] as string) || "",
             acq_time: (record["acq_time"] as string) || "",
             satellite: (record["satellite"] as string) || "",
-            confidence: (record["confidence"] as string) || "",
+            confidence: CONFIDENCE_LABELS[record["confidence"] as string] || (record["confidence"] as string) || "",
             version: (record["version"] as string) || "",
             bright_ti5: parseFloat(record["bright_ti5"] as string) || 0,
             frp: parseFloat(record["frp"] as string) || 0,

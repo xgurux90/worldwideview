@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCachedVessels, startAisStream } from "@/lib/ais-stream";
 
+const KNOTS_TO_MS = 0.514444;
+
 export const dynamic = 'force-dynamic';
 
 /**
@@ -25,7 +27,7 @@ export async function GET() {
         latitude: v.lat,
         longitude: v.lon,
         heading: v.heading,
-        speed: v.speed,
+        speed: v.speed * KNOTS_TO_MS, // GeoEntity.speed is m/s
         timestamp: v.timestamp ? new Date(v.timestamp) : new Date(),
         label: v.name,
         properties: {

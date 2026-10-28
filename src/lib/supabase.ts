@@ -19,3 +19,24 @@ export function getSupabaseClient() {
     });
     return client;
 }
+
+const PAGE_SIZE = 1000; // Supabase's default max rows per request
+
+/**
+ * Fetches every row of a query by paging with .range(), since a single
+ * request is capped at the project's max-rows setting.
+ * `buildQuery` must return a fresh, stably ordered query on each call.
+ */
+export async function fetchAllRows<T>(
+    buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>
+): Promise<{ data: T[] | null; error: any }> {
+    const rows: T[] = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1);
+        if (error) return { data: null, error };
+        if (!data) break;
+        rows.push(...data);
+        if (data.length < PAGE_SIZE) break;
+    }
+    return { data: rows, error: null };
+}

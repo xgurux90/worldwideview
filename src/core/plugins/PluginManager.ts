@@ -173,7 +173,8 @@ class PluginManager {
 
     private handleDataUpdate(pluginId: string, entities: GeoEntity[]): void {
         const managed = this.plugins.get(pluginId);
-        if (!managed) return;
+        // Ignore fetches that resolve after the layer was disabled
+        if (!managed || !managed.enabled) return;
         managed.entities = entities;
         // Use the configured cacheMaxAge instead of just 2x polling interval
         const cacheMaxAge = useStore.getState().dataConfig.cacheMaxAge || 3600000;

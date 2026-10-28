@@ -82,7 +82,7 @@ export class WildfirePlugin implements WorldPlugin {
             );
         } catch (err) {
             console.error("[WildfirePlugin] Fetch error:", err);
-            return [];
+            throw err; // Let PollingManager back off; keeps the last good data on screen
         }
     }
 

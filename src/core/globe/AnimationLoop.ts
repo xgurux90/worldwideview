@@ -8,22 +8,8 @@ import {
     CullingVolume
 } from "cesium";
 import type { Viewer as CesiumViewer } from "cesium";
-import type { GeoEntity, CesiumEntityOptions } from "@/core/plugins/PluginTypes";
 import { useStore } from "@/core/state/store";
-import { getEntityColor } from "./EntityRenderer";
-
-interface AnimatableItem {
-    primitive: any;
-    labelPrimitive?: any;
-    entity: GeoEntity;
-    posRef: Cartesian3;
-    options: CesiumEntityOptions;
-    basePosition?: Cartesian3;
-    velocityVector?: Cartesian3;
-    baseColor?: Color;
-    baseOutlineColor?: Color;
-    lastHighlightState?: 'normal' | 'hovered' | 'selected';
-}
+import type { AnimatableItem } from "./EntityRenderer";
 
 const HIGHLIGHT_COLOR_SELECTED = Color.fromCssColorString("#00fff7");
 const HIGHLIGHT_COLOR_HOVERED = Color.YELLOW;

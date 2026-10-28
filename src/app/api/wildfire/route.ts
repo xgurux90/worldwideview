@@ -90,7 +90,7 @@ export async function GET() {
 
         if (!res.ok) {
             if (cachedData) return NextResponse.json(cachedData);
-            return NextResponse.json({ fires: [] });
+            return NextResponse.json({ fires: [] }, { status: 502 });
         }
 
         const csv = await res.text();
@@ -132,6 +132,6 @@ export async function GET() {
     } catch (err) {
         console.error("[API/wildfire] Error:", err);
         if (cachedData) return NextResponse.json(cachedData);
-        return NextResponse.json({ fires: [] });
+        return NextResponse.json({ fires: [] }, { status: 502 });
     }
 }

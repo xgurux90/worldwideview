@@ -56,13 +56,6 @@ export default function GlobeView() {
     const setCameraPosition = useStore((s) => s.setCameraPosition);
     const setFps = useStore((s) => s.setFps);
 
-    // Camera position from store
-    const cameraLat = useStore((s) => s.cameraLat);
-    const cameraLon = useStore((s) => s.cameraLon);
-    const cameraAlt = useStore((s) => s.cameraAlt);
-    const cameraHeading = useStore((s) => s.cameraHeading);
-    const cameraPitch = useStore((s) => s.cameraPitch);
-
     // Compute visible & filtered entities
     const visibleEntities = useMemo(() => {
         const result: Array<{ entity: GeoEntity; options: CesiumEntityOptions }> = [];
@@ -207,9 +200,9 @@ export default function GlobeView() {
 
         // Initialize Google Photorealistic 3D Tiles once
         try {
-            const tileset = await createGooglePhotorealistic3DTileset({
-                key: process.env.GOOGLE_MAPS_API_KEY || undefined,
-            });
+            // Loaded via Cesium Ion (NEXT_PUBLIC_CESIUM_TOKEN); the server-only
+            // GOOGLE_MAPS_API_KEY must never be exposed to the browser
+            const tileset = await createGooglePhotorealistic3DTileset();
             tileset.maximumScreenSpaceError = maxScreenSpaceError;
             viewer.scene.primitives.add(tileset);
             // useImageryManager will handle its visibility based on state

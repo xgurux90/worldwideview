@@ -69,7 +69,7 @@ export function TimelineSync() {
         if (!isPlaybackMode) return;
 
         const now = currentTime.getTime();
-        // Trigger a fetch if time has moved by more than 15 seconds (matches backend recording frequency)
+        // Trigger a fetch if time has moved by more than 15 seconds (the aviation plugin skips refetching an unchanged snapshot)
         if (Math.abs(now - lastFetchTimeRef.current) > 15000) {
             lastFetchTimeRef.current = now;
             pluginManager.updateTimeRange(timeRange);
